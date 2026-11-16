@@ -1,7 +1,8 @@
 """Atualização automática a partir das releases do GitHub.
 
-Consulta a release mais recente de mpjsilva/captar, baixa o .rpm anexado e
-instala com ``pkexec dnf install`` (o sistema pede a senha).
+Consulta a release mais recente de mpjsilva/captar, baixa o pacote do
+mesmo formato do instalado (.rpm no Fedora, .deb no Debian/Ubuntu) e
+instala com ``pkexec dnf``/``pkexec apt-get`` (o sistema pede a senha).
 """
 
 import json
@@ -33,9 +34,16 @@ def is_newer(remote, local=__version__):
     return _parse(remote) > _parse(local)
 
 
-def installed_from_rpm():
+def package_format():
+    """'deb', 'rpm' ou None (rodando pelo código-fonte)."""
     here = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return here == INSTALLED_DIR and shutil.which("dnf") is not None
+    if here != INSTALLED_DIR:
+        return None
+    if os.path.exists("/var/lib/dpkg/info/captar.list") and shutil.which("apt-get"):
+        return "deb"
+    if shutil.which("dnf"):
+        return "rpm"
+    return None
 
 
 def _request(url, accept="application/vnd.github+json"):
@@ -85,16 +93,17 @@ class Updater(QObject):
             return
         self._busy = False
         tag = release.get("tag_name", "")
-        if tag and is_newer(tag) and self._rpm_asset(release):
+        if tag and is_newer(tag) and self._asset(release):
             self._release = release
             self.available.emit(tag.lstrip("v"), release.get("body") or "")
         else:
             self.up_to_date.emit()
 
     @staticmethod
-    def _rpm_asset(release):
+    def _asset(release):
+        suffix = "_all.deb" if package_format() == "deb" else ".noarch.rpm"
         for asset in release.get("assets", []):
-            if asset.get("name", "").endswith(".noarch.rpm"):
+            if asset.get("name", "").endswith(suffix):
                 return asset
         return None
 
@@ -105,7 +114,7 @@ class Updater(QObject):
         threading.Thread(target=self._download, daemon=True).start()
 
     def _download(self):
-        asset = self._rpm_asset(self._release)
+        asset = self._asset(self._release)
         directory = tempfile.mkdtemp(prefix="captar-update-")
         path = os.path.join(directory, os.path.basename(asset["name"]))
         try:
@@ -121,5 +130,7 @@ class Updater(QObject):
 
 
 def install_command(path):
-    """Comando que instala o RPM pedindo a senha pelo polkit."""
+    """Comando que instala o pacote pedindo a senha pelo polkit."""
+    if path.endswith(".deb"):
+        return ["pkexec", "apt-get", "install", "-y", path]
     return ["pkexec", "dnf", "install", "-y", path]

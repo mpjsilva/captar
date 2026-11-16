@@ -323,7 +323,7 @@ class CaptarApp(QObject):
         if not version:
             self.check_updates(manual=True)
             return
-        if not updater.installed_from_rpm():
+        if updater.package_format() is None:
             QDesktopServices.openUrl(QUrl(
                 f"https://github.com/{updater.REPO}/releases/tag/v{version}"))
             return

@@ -1,6 +1,6 @@
 # Captar
 
-Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora).
+Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora, Debian e Ubuntu).
 
 O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurece; você recorta uma área, anota por cima e salva, copia ou envia para a nuvem com um link pronto para colar.
 
@@ -31,15 +31,23 @@ O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurec
 
 > As imagens são simulações geradas a partir da própria interface do Captar.
 
-## Instalação (Fedora)
+## Instalação
 
-Baixe o RPM em [Releases](https://github.com/mpjsilva/captar/releases) e instale:
+Baixe o pacote em [Releases](https://github.com/mpjsilva/captar/releases).
+
+**Fedora**
 
 ```bash
-sudo dnf install ./captar-2.0.2-1.fc45.noarch.rpm
+sudo dnf install ./captar-2.0.3-1.fc45.noarch.rpm
 ```
 
-Dependências instaladas automaticamente: `python3-pyside6`, `python3-gobject`, `xdg-desktop-portal`, `kf6-kglobalaccel` e, como recomendado, `rclone`.
+**Debian / Ubuntu / KDE neon**
+
+```bash
+sudo apt install ./captar_2.0.3_all.deb
+```
+
+Dependências instaladas automaticamente: PySide6, PyGObject, `xdg-desktop-portal` e polkit; como recomendados, `rclone` e o serviço de atalhos globais do KDE.
 
 O Captar inicia junto com a sessão. Para abrir na hora, procure **Captar** no menu de aplicativos.
 
@@ -78,7 +86,7 @@ No Google Drive o acesso é restrito (`drive.file`): o Captar só enxerga os arq
 
 ## Atualizações
 
-O Captar verifica as [releases do GitHub](https://github.com/mpjsilva/captar/releases) 20 segundos após iniciar e depois a cada 6 horas. Quando há versão nova, aparece um aviso na bandeja e o item **Atualizar para a versão X** no menu. Ao confirmar, ele baixa o RPM, instala com `pkexec dnf install` (o sistema pede a senha) e reabre já atualizado.
+O Captar verifica as [releases do GitHub](https://github.com/mpjsilva/captar/releases) 20 segundos após iniciar e depois a cada 6 horas. Quando há versão nova, aparece um aviso na bandeja e o item **Atualizar para a versão X** no menu. Ao confirmar, ele baixa o pacote do mesmo formato do instalado (.rpm ou .deb), instala com `pkexec dnf` ou `pkexec apt-get` (o sistema pede a senha) e reabre já atualizado.
 
 A verificação manual fica em **Verificar atualizações**, no menu da bandeja. A automática pode ser desligada nas configurações.
 
@@ -99,10 +107,14 @@ captar/updater.py     atualização automática pelo GitHub
 captar.spec           empacotamento RPM
 ```
 
-## Gerar o RPM
+## Gerar os pacotes
 
 ```bash
-V=2.0.2
+# .deb
+packaging/build-deb.sh
+
+# .rpm
+V=2.0.3
 mkdir -p build/SOURCES && git archive --prefix=captar-$V/ -o build/SOURCES/captar-$V.tar.gz HEAD
 rpmbuild -bb --define "_topdir $PWD/build" captar.spec
 ```
