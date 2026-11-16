@@ -96,10 +96,11 @@ class TextBox(QFrame):
         self.update()
 
     def _fit_height(self):
-        """Cresce a caixa para baixo quando o texto não cabe."""
-        self.edit.document().setTextWidth(self.shape.rect.width())
-        needed = self.edit.document().size().height() + 2
-        if needed > self.shape.rect.height():
+        """Ajusta a altura da caixa ao texto (cresce e encolhe)."""
+        doc = self.edit.document()
+        doc.setTextWidth(self.shape.rect.width())
+        needed = max(self.shape.font_size * 1.4, doc.size().height() + 2)
+        if abs(needed - self.shape.rect.height()) > 0.5:
             self.shape.rect.setHeight(needed)
             self.relayout()
 
