@@ -36,7 +36,7 @@ O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurec
 Baixe o RPM em [Releases](https://github.com/mpjsilva/captar/releases) e instale:
 
 ```bash
-sudo dnf install ./captar-2.0.0-1.fc45.noarch.rpm
+sudo dnf install ./captar-2.0.1-1.fc45.noarch.rpm
 ```
 
 Dependências instaladas automaticamente: `python3-pyside6`, `python3-gobject`, `xdg-desktop-portal`, `kf6-kglobalaccel` e, como recomendado, `rclone`.
@@ -95,7 +95,7 @@ captar.spec           empacotamento RPM
 ## Gerar o RPM
 
 ```bash
-V=2.0.0
+V=2.0.1
 mkdir -p build/SOURCES && git archive --prefix=captar-$V/ -o build/SOURCES/captar-$V.tar.gz HEAD
 rpmbuild -bb --define "_topdir $PWD/build" captar.spec
 ```

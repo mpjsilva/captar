@@ -1,5 +1,5 @@
 Name:           captar
-Version:        2.0.0
+Version:        2.0.1
 Release:        1%{?dist}
 Summary:        Captura de tela com anotações para KDE Plasma Wayland
 License:        MIT
@@ -47,6 +47,9 @@ install -m 0644 captar.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/c
 %{_datadir}/icons/hicolor/scalable/apps/captar.svg
 
 %changelog
+* Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.1-1
+- Caixa de texto ajusta a altura ao conteúdo (cresce e encolhe)
+
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.0-1
 - Seleção ajustável: alças, mover, setas do teclado e tamanho em pixels
 - Barra vertical de ferramentas e barra horizontal de ações (estilo Lightshot)
