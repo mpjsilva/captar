@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Captar
+Comment=Captura de tela com anotações
+Exec=captar
+Icon=captar
+Terminal=false
+Categories=Graphics;
+Keywords=screenshot;captura;print;
+StartupNotify=false
+X-KDE-StartupNotify=false

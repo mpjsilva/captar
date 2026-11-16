@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+"""Captar - captura de tela com anotações."""
+
+import os
+import sys
+
+# Quando instalado via RPM, o pacote Python fica em /usr/share/captar.
+_here = os.path.dirname(os.path.realpath(__file__))
+for _candidate in ("/usr/share/captar", os.path.join(_here, "..")):
+    _candidate = os.path.abspath(_candidate)
+    if os.path.isdir(os.path.join(_candidate, "captar")):
+        sys.path.insert(0, _candidate)
+        break
+
+from captar.app import main  # noqa: E402
+
+if __name__ == "__main__":
+    sys.exit(main())
