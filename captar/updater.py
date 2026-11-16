@@ -1,0 +1,125 @@
+"""Atualização automática a partir das releases do GitHub.
+
+Consulta a release mais recente de mpjsilva/captar, baixa o .rpm anexado e
+instala com ``pkexec dnf install`` (o sistema pede a senha).
+"""
+
+import json
+import os
+import shutil
+import tempfile
+import threading
+import urllib.error
+import urllib.request
+
+from PySide6.QtCore import QObject, Signal
+
+from . import __version__
+
+REPO = "mpjsilva/captar"
+API = f"https://api.github.com/repos/{REPO}/releases/latest"
+INSTALLED_DIR = "/usr/share/captar"
+
+
+def _parse(version):
+    parts = []
+    for piece in version.lstrip("vV").split("."):
+        digits = "".join(ch for ch in piece if ch.isdigit())
+        parts.append(int(digits or 0))
+    return tuple(parts)
+
+
+def is_newer(remote, local=__version__):
+    return _parse(remote) > _parse(local)
+
+
+def installed_from_rpm():
+    here = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return here == INSTALLED_DIR and shutil.which("dnf") is not None
+
+
+def _request(url, accept="application/vnd.github+json"):
+    req = urllib.request.Request(url, headers={
+        "Accept": accept,
+        "User-Agent": "captar-updater",
+        "X-GitHub-Api-Version": "2022-11-28",
+    })
+    return urllib.request.urlopen(req, timeout=30)
+
+
+class Updater(QObject):
+    """Verifica e baixa em segundo plano; os sinais chegam na thread da GUI."""
+
+    available = Signal(str, str)  # versão, notas
+    up_to_date = Signal()
+    downloaded = Signal(str)  # caminho do .rpm
+    failed = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._release = None
+        self._busy = False
+
+    @property
+    def version(self):
+        return self._release["tag_name"].lstrip("v") if self._release else ""
+
+    def check(self):
+        if self._busy:
+            return
+        self._busy = True
+        threading.Thread(target=self._check, daemon=True).start()
+
+    def _check(self):
+        try:
+            with _request(API) as resp:
+                release = json.load(resp)
+        except urllib.error.HTTPError as exc:
+            msg = f"GitHub respondeu {exc.code} ao verificar atualizações."
+            self._busy = False
+            self.failed.emit(msg)
+            return
+        except (OSError, ValueError) as exc:
+            self._busy = False
+            self.failed.emit(f"Falha ao verificar atualizações: {exc}")
+            return
+        self._busy = False
+        tag = release.get("tag_name", "")
+        if tag and is_newer(tag) and self._rpm_asset(release):
+            self._release = release
+            self.available.emit(tag.lstrip("v"), release.get("body") or "")
+        else:
+            self.up_to_date.emit()
+
+    @staticmethod
+    def _rpm_asset(release):
+        for asset in release.get("assets", []):
+            if asset.get("name", "").endswith(".noarch.rpm"):
+                return asset
+        return None
+
+    def download(self):
+        if self._release is None or self._busy:
+            return
+        self._busy = True
+        threading.Thread(target=self._download, daemon=True).start()
+
+    def _download(self):
+        asset = self._rpm_asset(self._release)
+        directory = tempfile.mkdtemp(prefix="captar-update-")
+        path = os.path.join(directory, os.path.basename(asset["name"]))
+        try:
+            with _request(asset["url"], accept="application/octet-stream") as resp, \
+                    open(path, "wb") as fh:
+                shutil.copyfileobj(resp, fh)
+        except (OSError, urllib.error.HTTPError) as exc:
+            self._busy = False
+            self.failed.emit(f"Falha ao baixar a atualização: {exc}")
+            return
+        self._busy = False
+        self.downloaded.emit(path)
+
+
+def install_command(path):
+    """Comando que instala o RPM pedindo a senha pelo polkit."""
+    return ["pkexec", "dnf", "install", "-y", path]

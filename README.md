@@ -1,6 +1,6 @@
 # Captar
 
-Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora), no estilo do Lightshot.
+Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora).
 
 O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurece; você recorta uma área, anota por cima e salva, copia ou envia para a nuvem com um link pronto para colar.
 
@@ -36,7 +36,7 @@ O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurec
 Baixe o RPM em [Releases](https://github.com/mpjsilva/captar/releases) e instale:
 
 ```bash
-sudo dnf install ./captar-2.0.1-1.fc45.noarch.rpm
+sudo dnf install ./captar-2.0.2-1.fc45.noarch.rpm
 ```
 
 Dependências instaladas automaticamente: `python3-pyside6`, `python3-gobject`, `xdg-desktop-portal`, `kf6-kglobalaccel` e, como recomendado, `rclone`.
@@ -76,6 +76,12 @@ Abra **Configurações…** no menu da bandeja e clique em **Conectar Google Dri
 
 No Google Drive o acesso é restrito (`drive.file`): o Captar só enxerga os arquivos que ele mesmo enviou. Contas já existentes no `rclone config` desses três serviços também aparecem na lista.
 
+## Atualizações
+
+O Captar verifica as [releases do GitHub](https://github.com/mpjsilva/captar/releases) 20 segundos após iniciar e depois a cada 6 horas. Quando há versão nova, aparece um aviso na bandeja e o item **Atualizar para a versão X** no menu. Ao confirmar, ele baixa o RPM, instala com `pkexec dnf install` (o sistema pede a senha) e reabre já atualizado.
+
+A verificação manual fica em **Verificar atualizações**, no menu da bandeja. A automática pode ser desligada nas configurações.
+
 ## Estrutura
 
 ```
@@ -89,13 +95,14 @@ captar/shapes.py      formas de anotação
 captar/render.py      composição da imagem final
 captar/cloud.py       envio via rclone
 captar/settings.py    configurações e janela de configurações
+captar/updater.py     atualização automática pelo GitHub
 captar.spec           empacotamento RPM
 ```
 
 ## Gerar o RPM
 
 ```bash
-V=2.0.1
+V=2.0.2
 mkdir -p build/SOURCES && git archive --prefix=captar-$V/ -o build/SOURCES/captar-$V.tar.gz HEAD
 rpmbuild -bb --define "_topdir $PWD/build" captar.spec
 ```

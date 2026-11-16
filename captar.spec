@@ -1,5 +1,5 @@
 Name:           captar
-Version:        2.0.1
+Version:        2.0.2
 Release:        1%{?dist}
 Summary:        Captura de tela com anotações para KDE Plasma Wayland
 License:        MIT
@@ -11,6 +11,7 @@ Requires:       python3-pyside6
 Requires:       python3-gobject
 Requires:       xdg-desktop-portal
 Requires:       kf6-kglobalaccel
+Requires:       polkit
 Recommends:     rclone
 
 %description
@@ -47,12 +48,15 @@ install -m 0644 captar.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/c
 %{_datadir}/icons/hicolor/scalable/apps/captar.svg
 
 %changelog
+* Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.2-1
+- Atualização automática a partir das releases do GitHub
+
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.1-1
 - Caixa de texto ajusta a altura ao conteúdo (cresce e encolhe)
 
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.0-1
 - Seleção ajustável: alças, mover, setas do teclado e tamanho em pixels
-- Barra vertical de ferramentas e barra horizontal de ações (estilo Lightshot)
+- Barra vertical de ferramentas e barra horizontal de ações
 - Novas ferramentas: lápis, linha, marca-texto e mover/apagar anotação
 - Espessura do traço, paleta e cor personalizada
 - Desfazer/refazer completos (Ctrl+Z, Ctrl+Shift+Z)

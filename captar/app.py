@@ -21,6 +21,7 @@ from PySide6.QtCore import (  # noqa: E402
     QLockFile,
     QMimeData,
     QObject,
+    QProcess,
     QRectF,
     QStandardPaths,
     QTimer,
@@ -39,10 +40,11 @@ from PySide6.QtWidgets import (  # noqa: E402
     QApplication,
     QFileDialog,
     QMenu,
+    QMessageBox,
     QSystemTrayIcon,
 )
 
-from . import cloud  # noqa: E402
+from . import __version__, cloud, updater  # noqa: E402
 from .capture import CaptureError, grab_desktop  # noqa: E402
 from .overlay import Overlay, Session  # noqa: E402
 from .render import render  # noqa: E402
@@ -151,11 +153,13 @@ class Tray(QSystemTrayIcon):
     full_requested = Signal()
     folder_requested = Signal()
     settings_requested = Signal()
+    check_requested = Signal()
+    update_requested = Signal()
     quit_requested = Signal()
 
     def __init__(self, icon_path, parent=None):
         super().__init__(QIcon(icon_path), parent)
-        self.setToolTip("Captar — clique para capturar (Print Screen)")
+        self.setToolTip(f"Captar {__version__} — clique para capturar (Print Screen)")
         menu = QMenu()
         for label, signal in (
             ("Capturar área", self.capture_requested),
@@ -163,6 +167,7 @@ class Tray(QSystemTrayIcon):
             (None, None),
             ("Abrir pasta das capturas", self.folder_requested),
             ("Configurações…", self.settings_requested),
+            ("Verificar atualizações", self.check_requested),
             (None, None),
             ("Sair", self.quit_requested),
         ):
@@ -172,6 +177,10 @@ class Tray(QSystemTrayIcon):
             action = QAction(label, menu)
             action.triggered.connect(signal.emit)
             menu.addAction(action)
+        self.update_action = QAction("Atualizar", menu)
+        self.update_action.triggered.connect(self.update_requested.emit)
+        self.update_action.setVisible(False)
+        menu.insertAction(menu.actions()[0], self.update_action)
         self._menu = menu
         self.setContextMenu(menu)
         self.activated.connect(self._on_activated)
@@ -183,7 +192,7 @@ class Tray(QSystemTrayIcon):
 
 def _place(panels, rect, overlay):
     """Barra vertical à direita da seleção, barra horizontal embaixo
-    (alinhada à direita), como no Lightshot. Sem seleção: centradas."""
+    (alinhada à direita). Sem seleção: centradas."""
     tools, actions = panels
     for panel in panels:
         if panel.parent() is not overlay:
@@ -246,6 +255,23 @@ class CaptarApp(QObject):
         self.tray.settings_requested.connect(self.open_settings)
         self.tray.quit_requested.connect(self.quit)
         self.tray.messageClicked.connect(self._on_message_clicked)
+        self.tray.check_requested.connect(lambda: self.check_updates(manual=True))
+        self.tray.update_requested.connect(self.install_update)
+
+        self._message_action = None  # "folder" ou "update"
+        self._manual_check = False
+        self._installer = None
+        self.updater = updater.Updater(self)
+        self.updater.available.connect(self._on_update_available)
+        self.updater.up_to_date.connect(self._on_up_to_date)
+        self.updater.failed.connect(self._on_update_failed)
+        self.updater.downloaded.connect(self._on_update_downloaded)
+        # Verifica 20 s após iniciar e depois a cada 6 horas.
+        self._update_timer = QTimer(self)
+        self._update_timer.setInterval(6 * 3600 * 1000)
+        self._update_timer.timeout.connect(self.check_updates)
+        QTimer.singleShot(20000, self.check_updates)
+        self._update_timer.start()
 
         self._watchdog = QTimer(self)
         self._watchdog.setInterval(300)
@@ -265,9 +291,79 @@ class CaptarApp(QObject):
     def _notify(self, text, warn=False):
         icon = (QSystemTrayIcon.MessageIcon.Warning if warn
                 else QSystemTrayIcon.MessageIcon.Information)
+        self._message_action = "folder"
         self.tray.showMessage("Captar", text, icon, 5000)
 
+    # --- Atualização ----------------------------------------------------
+
+    def check_updates(self, manual=False):
+        if not manual and not self.settings.get("auto_update"):
+            return
+        self._manual_check = manual
+        if manual:
+            self._notify("Verificando atualizações…")
+        self.updater.check()
+
+    def _on_update_available(self, version, _notes):
+        self.tray.update_action.setText(f"Atualizar para a versão {version}")
+        self.tray.update_action.setVisible(True)
+        self._notify(f"Nova versão {version} disponível. Clique para atualizar.")
+        self._message_action = "update"
+
+    def _on_up_to_date(self):
+        if self._manual_check:
+            self._notify(f"O Captar {__version__} já é a versão mais recente.")
+
+    def _on_update_failed(self, message):
+        if self._manual_check or self._installer is not None:
+            self._notify(message, warn=True)
+
+    def install_update(self):
+        version = self.updater.version
+        if not version:
+            self.check_updates(manual=True)
+            return
+        if not updater.installed_from_rpm():
+            QDesktopServices.openUrl(QUrl(
+                f"https://github.com/{updater.REPO}/releases/tag/v{version}"))
+            return
+        answer = QMessageBox.question(
+            None, "Atualizar o Captar",
+            f"Instalar o Captar {version}?\nO sistema vai pedir a sua senha.",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._installer = "download"
+        self._notify(f"Baixando o Captar {version}…")
+        self.updater.download()
+
+    def _on_update_downloaded(self, path):
+        proc = QProcess(self)
+        proc.setProgram(updater.install_command(path)[0])
+        proc.setArguments(updater.install_command(path)[1:])
+        proc.finished.connect(lambda code, _s: self._on_installed(code, path))
+        self._installer = proc
+        proc.start()
+
+    def _on_installed(self, code, path):
+        self._installer = None
+        try:
+            os.remove(path)
+            os.rmdir(os.path.dirname(path))
+        except OSError:
+            pass
+        if code != 0:
+            self._notify("A atualização não foi instalada.", warn=True)
+            return
+        # Reabre a versão nova depois que esta instância liberar a trava.
+        QProcess.startDetached("sh", ["-c", "sleep 2; exec captar"])
+        self.quit()
+
     def _on_message_clicked(self):
+        if self._message_action == "update":
+            self._message_action = None
+            self.install_update()
+            return
         if self._last_path and os.path.exists(self._last_path):
             QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(self._last_path)))
 

@@ -6,6 +6,7 @@ import re
 from PySide6.QtCore import QSettings, QStandardPaths, Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -42,6 +43,7 @@ DEFAULTS = {
     "shortcut_full": "Shift+Print",
     "cloud_remote": "",
     "cloud_folder": "Captar",
+    "auto_update": 1,
 }
 
 
@@ -136,6 +138,13 @@ class SettingsDialog(QDialog):
         layout.addWidget(box)
         self._load_remotes()
 
+        updates = QGroupBox("Atualizações")
+        up_layout = QVBoxLayout(updates)
+        self.auto_update = QCheckBox("Verificar atualizações automaticamente no GitHub")
+        self.auto_update.setChecked(bool(settings.get("auto_update")))
+        up_layout.addWidget(self.auto_update)
+        layout.addWidget(updates)
+
         bbox = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save
             | QDialogButtonBox.StandardButton.Cancel
@@ -211,4 +220,5 @@ class SettingsDialog(QDialog):
         s.set("shortcut_full", self.key_full.keySequence().toString())
         s.set("cloud_remote", self.remote.currentData() or "")
         s.set("cloud_folder", self.folder.text().strip())
+        s.set("auto_update", 1 if self.auto_update.isChecked() else 0)
         self.accept()
