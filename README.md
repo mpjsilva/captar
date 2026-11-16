@@ -1,6 +1,6 @@
 # Captar
 
-Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora, Debian e Ubuntu).
+Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora, Debian e Ubuntu) e **Windows 10/11 x64**.
 
 O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurece; você recorta uma área, anota por cima e salva, copia ou envia para a nuvem com um link pronto para colar.
 
@@ -38,16 +38,22 @@ Baixe o pacote em [Releases](https://github.com/mpjsilva/captar/releases).
 **Fedora**
 
 ```bash
-sudo dnf install ./captar-2.0.3-1.fc45.noarch.rpm
+sudo dnf install ./captar-2.1.0-1.fc45.noarch.rpm
 ```
 
 **Debian / Ubuntu / KDE neon**
 
 ```bash
-sudo apt install ./captar_2.0.3_all.deb
+sudo apt install ./captar_2.1.0_all.deb
 ```
 
-Dependências instaladas automaticamente: PySide6, PyGObject, `xdg-desktop-portal` e polkit; como recomendados, `rclone` e o serviço de atalhos globais do KDE.
+**Windows 10/11 x64**
+
+Baixe `captar-2.1.0-setup-x64.exe` e execute. A instalação é só para o seu usuário (não pede administrador) e pode iniciar o Captar com o Windows.
+
+No Windows 11, a tecla Print Screen abre a Ferramenta de Captura por padrão. Para o Captar usar o Print, desligue **Configurações › Acessibilidade › Teclado › Usar a tecla Print Screen para abrir a captura de tela** (ou escolha outro atalho nas configurações do Captar). Para a nuvem, instale o rclone: `winget install Rclone.Rclone`.
+
+No Linux, as dependências instaladas automaticamente são: PySide6, PyGObject, `xdg-desktop-portal` e polkit; como recomendados, `rclone` e o serviço de atalhos globais do KDE.
 
 O Captar inicia junto com a sessão. Para abrir na hora, procure **Captar** no menu de aplicativos.
 
@@ -86,7 +92,7 @@ No Google Drive o acesso é restrito (`drive.file`): o Captar só enxerga os arq
 
 ## Atualizações
 
-O Captar verifica as [releases do GitHub](https://github.com/mpjsilva/captar/releases) 20 segundos após iniciar e depois a cada 6 horas. Quando há versão nova, aparece um aviso na bandeja e o item **Atualizar para a versão X** no menu. Ao confirmar, ele baixa o pacote do mesmo formato do instalado (.rpm ou .deb), instala com `pkexec dnf` ou `pkexec apt-get` (o sistema pede a senha) e reabre já atualizado.
+O Captar verifica as [releases do GitHub](https://github.com/mpjsilva/captar/releases) 20 segundos após iniciar e depois a cada 6 horas. Quando há versão nova, aparece um aviso na bandeja e o item **Atualizar para a versão X** no menu. Ao confirmar, ele baixa o pacote do mesmo formato do instalado (.rpm, .deb ou instalador .exe), instala com `pkexec dnf`, `pkexec apt-get` ou o próprio instalador no Windows (o sistema pede a senha) e reabre já atualizado.
 
 A verificação manual fica em **Verificar atualizações**, no menu da bandeja. A automática pode ser desligada nas configurações.
 
@@ -104,6 +110,8 @@ captar/render.py      composição da imagem final
 captar/cloud.py       envio via rclone
 captar/settings.py    configurações e janela de configurações
 captar/updater.py     atualização automática pelo GitHub
+captar/shortcuts.py   atalhos globais (kglobalaccel no KDE, RegisterHotKey no Windows)
+packaging/            build do .deb e do instalador do Windows
 captar.spec           empacotamento RPM
 ```
 
@@ -113,8 +121,11 @@ captar.spec           empacotamento RPM
 # .deb
 packaging/build-deb.sh
 
+# Windows: feito pelo GitHub Actions (.github/workflows/windows.yml)
+# a cada release publicada; anexa o instalador .exe à release.
+
 # .rpm
-V=2.0.3
+V=2.1.0
 mkdir -p build/SOURCES && git archive --prefix=captar-$V/ -o build/SOURCES/captar-$V.tar.gz HEAD
 rpmbuild -bb --define "_topdir $PWD/build" captar.spec
 ```

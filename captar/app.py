@@ -10,11 +10,6 @@ import sys
 import tempfile
 from datetime import datetime
 
-import gi
-
-gi.require_version("Gio", "2.0")
-from gi.repository import Gio, GLib  # noqa: E402
-
 from PySide6.QtCore import (  # noqa: E402
     QBuffer,
     QByteArray,
@@ -44,18 +39,15 @@ from PySide6.QtWidgets import (  # noqa: E402
     QSystemTrayIcon,
 )
 
-from . import __version__, cloud, updater  # noqa: E402
+from . import __version__, cloud, shortcuts, updater  # noqa: E402
 from .capture import CaptureError, grab_desktop  # noqa: E402
 from .overlay import Overlay, Session  # noqa: E402
 from .render import render  # noqa: E402
 from .settings import Settings, SettingsDialog  # noqa: E402
 from .toolbar import ActionBar, ToolPanel  # noqa: E402
 
-COMPONENT = "captar"
 ACTION_AREA = "capture"
 ACTION_FULL = "capture-full"
-# Flags do kglobalaccel: SetPresent | NoAutoloading (o Captar manda no atalho).
-SHORTCUT_FLAGS = 2 | 4
 
 
 def _acquire_lock():
@@ -69,13 +61,6 @@ def _acquire_lock():
     if not lock.tryLock(100):
         return None
     return lock
-
-
-def _key_code(text):
-    seq = QKeySequence(text)
-    if seq.isEmpty():
-        return 0
-    return seq[0].toCombined()
 
 
 def _copy_to_clipboard(image):
@@ -97,55 +82,6 @@ def _copy_to_clipboard(image):
 
 def _copy_text(text):
     QGuiApplication.clipboard().setText(text)
-
-
-class GlobalShortcut(QObject):
-    """Registra as ações no kglobalaccel e escuta globalShortcutPressed."""
-
-    activated = Signal(str)  # nome da ação
-
-    def __init__(self):
-        super().__init__()
-        self._bus = Gio.bus_get_sync(Gio.BusType.SESSION)
-        self._sub = None
-        self._ok = True
-
-    @staticmethod
-    def _action(name):
-        friendly = {ACTION_AREA: "Capturar área",
-                    ACTION_FULL: "Capturar tela inteira"}[name]
-        return [COMPONENT, name, "Captar", friendly]
-
-    def _call(self, method, signature, args):
-        return self._bus.call_sync(
-            "org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel",
-            method, GLib.Variant(signature, args), None,
-            Gio.DBusCallFlags.NONE, 5000, None,
-        )
-
-    def register(self, keys):
-        """keys: {ação: texto do atalho}. Pode ser chamado de novo para trocar."""
-        for name, text in keys.items():
-            action = self._action(name)
-            try:
-                self._call("doRegister", "(as)", (action,))
-                code = _key_code(text)
-                self._call("setShortcut", "(asaiu)",
-                           (action, [code] if code else [], SHORTCUT_FLAGS))
-            except GLib.Error as exc:
-                print(f"Captar: kglobalaccel: {exc.message}", file=sys.stderr)
-                self._ok = False
-        if self._sub is None and self._ok:
-            self._sub = self._bus.signal_subscribe(
-                "org.kde.kglobalaccel", "org.kde.kglobalaccel.Component",
-                "globalShortcutPressed", f"/component/{COMPONENT}", None,
-                Gio.DBusSignalFlags.NONE, self._on_pressed,
-            )
-
-    def _on_pressed(self, _conn, _sender, _path, _iface, _sig, params):
-        component, shortcut, _timestamp = params.unpack()
-        if component == COMPONENT:
-            self.activated.emit(shortcut)
 
 
 class Tray(QSystemTrayIcon):
@@ -244,8 +180,11 @@ class CaptarApp(QObject):
         self._uploads = []
         self._settings_dialog = None
 
-        self.shortcut = GlobalShortcut()
+        self.tray = None
+        self.shortcut = shortcuts.create()
         self.shortcut.activated.connect(self._on_shortcut)
+        self.shortcut.failed.connect(self._on_shortcut_failed)
+        self._shortcut_error = None
         self._register_shortcuts()
 
         self.tray = Tray(icon_path, self)
@@ -280,6 +219,8 @@ class CaptarApp(QObject):
 
     def start(self):
         self.tray.show()
+        if self._shortcut_error:
+            QTimer.singleShot(1500, lambda: self._notify(self._shortcut_error, warn=True))
 
     def quit(self):
         self._teardown()
@@ -337,7 +278,18 @@ class CaptarApp(QObject):
         self._notify(f"Baixando o Captar {version}…")
         self.updater.download()
 
+    def _on_shortcut_failed(self, message):
+        if self.tray is None:
+            self._shortcut_error = message  # avisa quando a bandeja existir
+        else:
+            self._notify(message, warn=True)
+
     def _on_update_downloaded(self, path):
+        if path.lower().endswith(".exe"):
+            # Instalador Inno Setup: fecha o Captar, instala e reabre sozinho.
+            QProcess.startDetached(path, updater.install_command(path)[1:])
+            self.quit()
+            return
         proc = QProcess(self)
         proc.setProgram(updater.install_command(path)[0])
         proc.setArguments(updater.install_command(path)[1:])
@@ -616,6 +568,7 @@ class CaptarApp(QObject):
 
 def _icon_path():
     candidates = [
+        os.path.join(getattr(sys, "_MEIPASS", ""), "captar.svg"),
         "/usr/share/icons/hicolor/scalable/apps/captar.svg",
         os.path.join(os.path.dirname(__file__), "..", "captar.svg"),
     ]

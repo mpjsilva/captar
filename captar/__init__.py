@@ -1,3 +1,3 @@
-"""Captar - captura de tela com anotações para KDE Plasma Wayland."""
+"""Captar - captura de tela com anotações (KDE Plasma Wayland e Windows)."""
 
-__version__ = "2.0.3"
+__version__ = "2.1.0"

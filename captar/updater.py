@@ -8,6 +8,7 @@ instala com ``pkexec dnf``/``pkexec apt-get`` (o sistema pede a senha).
 import json
 import os
 import shutil
+import sys
 import tempfile
 import threading
 import urllib.error
@@ -35,7 +36,9 @@ def is_newer(remote, local=__version__):
 
 
 def package_format():
-    """'deb', 'rpm' ou None (rodando pelo código-fonte)."""
+    """'exe', 'deb', 'rpm' ou None (rodando pelo código-fonte)."""
+    if sys.platform == "win32":
+        return "exe" if getattr(sys, "frozen", False) else None
     here = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     if here != INSTALLED_DIR:
         return None
@@ -101,7 +104,8 @@ class Updater(QObject):
 
     @staticmethod
     def _asset(release):
-        suffix = "_all.deb" if package_format() == "deb" else ".noarch.rpm"
+        suffix = {"deb": "_all.deb", "exe": "-setup-x64.exe"}.get(
+            package_format(), ".noarch.rpm")
         for asset in release.get("assets", []):
             if asset.get("name", "").endswith(suffix):
                 return asset
@@ -131,6 +135,8 @@ class Updater(QObject):
 
 def install_command(path):
     """Comando que instala o pacote pedindo a senha pelo polkit."""
+    if path.lower().endswith(".exe"):
+        return [path, "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"]
     if path.endswith(".deb"):
         return ["pkexec", "apt-get", "install", "-y", path]
     return ["pkexec", "dnf", "install", "-y", path]

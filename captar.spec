@@ -1,5 +1,5 @@
 Name:           captar
-Version:        2.0.3
+Version:        2.1.0
 Release:        1%{?dist}
 Summary:        Captura de tela com anotações para KDE Plasma Wayland
 License:        MIT
@@ -48,6 +48,10 @@ install -m 0644 captar.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/c
 %{_datadir}/icons/hicolor/scalable/apps/captar.svg
 
 %changelog
+* Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.1.0-1
+- Versão para Windows 10/11 x64 (instalador)
+- Atalhos globais e captura separados por plataforma
+
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.3-1
 - Pacote .deb para Debian/Ubuntu; atualizador escolhe .rpm ou .deb
 

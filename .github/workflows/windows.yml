@@ -1,0 +1,86 @@
+name: Windows
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag da release que recebe o instalador (vazio = só gerar o artefato)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyside6 pyinstaller
+
+      - name: Versão
+        id: ver
+        shell: bash
+        run: |
+          V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' captar/__init__.py)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Teste rápido (offscreen)
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python - <<'PY'
+          from PySide6.QtWidgets import QApplication
+          app = QApplication([])
+          from captar import app as captar_app, capture, shortcuts, updater
+          from captar.overlay import Session, Overlay
+          from captar.render import render
+          pix = capture._qt_screenshot()
+          s = Session(pix)
+          Overlay(s, app.primaryScreen())
+          assert not render(s).isNull()
+          assert shortcuts._vk(shortcuts._combo("Print").key()) == 0x2C
+          print("ok", pix.size(), updater.package_format())
+          PY
+
+      - name: PyInstaller
+        run: >
+          pyinstaller --noconfirm --clean --windowed --name Captar
+          --icon packaging/windows/captar.ico
+          --add-data "captar.svg;."
+          --paths .
+          --exclude-module PySide6.QtWebEngineCore
+          --exclude-module PySide6.QtQuick
+          --exclude-module PySide6.QtQml
+          --exclude-module PySide6.Qt3DCore
+          --exclude-module PySide6.QtMultimedia
+          packaging/windows/captar_win.py
+
+      - name: Inno Setup
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DMyVersion=${{ steps.ver.outputs.version }} packaging\windows\captar.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: captar-windows-x64
+          path: dist/captar-*-setup-x64.exe
+
+      - name: Anexar à release
+        if: github.event.release.tag_name || inputs.tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name || inputs.tag }}" dist/captar-*-setup-x64.exe --clobber

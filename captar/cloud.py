@@ -3,6 +3,10 @@
 import os
 import shutil
 import subprocess
+import sys
+
+# No Windows, não abrir janela de console para o rclone.
+_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 from PySide6.QtCore import QObject, QProcess, Signal
 
@@ -34,6 +38,7 @@ def list_remotes():
         out = subprocess.run(
             ["rclone", "listremotes", "--long"],
             capture_output=True, text=True, timeout=10, check=False,
+            creationflags=_NO_WINDOW,
         ).stdout
     except (OSError, subprocess.TimeoutExpired):
         return []
