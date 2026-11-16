@@ -3,7 +3,7 @@ Version:        2.0.0
 Release:        1%{?dist}
 Summary:        Captura de tela com anotações para KDE Plasma Wayland
 License:        MIT
-URL:            https://github.com/jamerson/captar
+URL:            https://github.com/mpjsilva/captar
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       python3
