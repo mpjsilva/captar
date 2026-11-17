@@ -1,6 +1,6 @@
 # Captar
 
-Captura de tela com anotações para **KDE Plasma no Wayland** (Fedora, Debian e Ubuntu) e **Windows 10/11 x64**.
+Captura de tela com anotações para **Linux no Wayland** (Fedora, Debian e Ubuntu) e **Windows 10/11 x64**.
 
 O Captar fica na bandeja do sistema. Ao apertar **Print Screen**, a tela escurece; você recorta uma área, anota por cima e salva, copia ou envia para a nuvem com um link pronto para colar.
 
@@ -41,10 +41,10 @@ Baixe o pacote em [Releases](https://github.com/mpjsilva/captar/releases).
 sudo dnf install ./captar-2.1.0-1.fc45.noarch.rpm
 ```
 
-**Debian / Ubuntu / KDE neon**
+**Debian / Ubuntu**
 
 ```bash
-sudo apt install ./captar_2.1.0_all.deb
+sudo apt install ./captar_2.1.0_amd64.deb
 ```
 
 **Windows 10/11 x64**
@@ -53,7 +53,7 @@ Baixe `captar-2.1.0-setup-x64.exe` e execute. A instalação é só para o seu u
 
 No Windows 11, a tecla Print Screen abre a Ferramenta de Captura por padrão. Para o Captar usar o Print, desligue **Configurações › Acessibilidade › Teclado › Usar a tecla Print Screen para abrir a captura de tela** (ou escolha outro atalho nas configurações do Captar). Para a nuvem, instale o rclone: `winget install Rclone.Rclone`.
 
-No Linux, as dependências instaladas automaticamente são: PySide6, PyGObject, `xdg-desktop-portal` e polkit; como recomendados, `rclone` e o serviço de atalhos globais do KDE.
+No Linux, o pacote já traz o PySide6; as demais dependências (PyGObject, `xdg-desktop-portal` e polkit) são instaladas automaticamente, e o `rclone` entra como recomendado.
 
 O Captar inicia junto com a sessão. Para abrir na hora, procure **Captar** no menu de aplicativos.
 
@@ -110,7 +110,7 @@ captar/render.py      composição da imagem final
 captar/cloud.py       envio via rclone
 captar/settings.py    configurações e janela de configurações
 captar/updater.py     atualização automática pelo GitHub
-captar/shortcuts.py   atalhos globais (kglobalaccel no KDE, RegisterHotKey no Windows)
+captar/shortcuts.py   atalhos globais (kglobalaccel no Linux, RegisterHotKey no Windows)
 packaging/            build do .deb e do instalador do Windows
 captar.spec           empacotamento RPM
 ```

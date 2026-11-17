@@ -4,7 +4,11 @@
 import os
 import sys
 
-# Quando instalado via RPM, o pacote Python fica em /usr/share/captar.
+# O .deb traz o PySide6 embutido em /usr/share/captar/lib.
+if os.path.isdir("/usr/share/captar/lib/PySide6"):
+    sys.path.insert(0, "/usr/share/captar/lib")
+
+# Quando instalado por pacote, o código fica em /usr/share/captar.
 _here = os.path.dirname(os.path.realpath(__file__))
 for _candidate in ("/usr/share/captar", os.path.join(_here, "..")):
     _candidate = os.path.abspath(_candidate)

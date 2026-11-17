@@ -1,8 +1,8 @@
-"""Captar - captura de tela com anotações para KDE Plasma Wayland.
+"""Captar - captura de tela com anotações para Wayland e Windows.
 
 O Captar fica residente na bandeja do sistema e captura quando recebe os
 atalhos globais (Print Screen: área; Shift+Print: tela inteira),
-registrados no kglobalaccel do KDE.
+registrados no serviço de atalhos do sistema.
 """
 
 import os

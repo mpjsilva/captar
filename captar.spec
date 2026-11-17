@@ -1,7 +1,7 @@
 Name:           captar
 Version:        2.1.0
 Release:        1%{?dist}
-Summary:        Captura de tela com anotações para KDE Plasma Wayland
+Summary:        Captura de tela com anotações para Wayland
 License:        MIT
 URL:            https://github.com/mpjsilva/captar
 Source0:        %{name}-%{version}.tar.gz
@@ -10,12 +10,12 @@ Requires:       python3
 Requires:       python3-pyside6
 Requires:       python3-gobject
 Requires:       xdg-desktop-portal
-Requires:       kf6-kglobalaccel
+Recommends:     kf6-kglobalaccel
 Requires:       polkit
 Recommends:     rclone
 
 %description
-Captar é uma ferramenta de captura de tela feita para o KDE Plasma no
+Captar é uma ferramenta de captura de tela feita para o
 Wayland. Fica residente na bandeja do sistema, esmaece todas as telas ao
 receber o atalho Print Screen, permite recortar uma área e anotar o
 resultado com setas, retângulos e caixas de texto.
@@ -51,6 +51,8 @@ install -m 0644 captar.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/c
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.1.0-1
 - Versão para Windows 10/11 x64 (instalador)
 - Atalhos globais e captura separados por plataforma
+- .deb traz o PySide6 embutido (Ubuntu 24.04, Debian 12 e outras)
+- Textos não citam mais um ambiente gráfico específico
 
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.0.3-1
 - Pacote .deb para Debian/Ubuntu; atualizador escolhe .rpm ou .deb

@@ -1,4 +1,4 @@
-"""Atalhos globais: kglobalaccel (KDE/Linux) ou RegisterHotKey (Windows).
+"""Atalhos globais: kglobalaccel (Linux) ou RegisterHotKey (Windows).
 
 As duas classes têm a mesma interface: ``register({ação: "Shift+Print"})``
 e os sinais ``activated(ação)`` e ``failed(mensagem)``.
@@ -17,7 +17,7 @@ FRIENDLY = {
 
 
 def create():
-    return WinShortcut() if sys.platform == "win32" else KdeShortcut()
+    return WinShortcut() if sys.platform == "win32" else LinuxShortcut()
 
 
 def _combo(text):
@@ -25,10 +25,10 @@ def _combo(text):
     return None if seq.isEmpty() else seq[0]
 
 
-# --- KDE ------------------------------------------------------------------
+# --- Linux ----------------------------------------------------------------
 
 
-class KdeShortcut(QObject):
+class LinuxShortcut(QObject):
     """Registra as ações no kglobalaccel e escuta globalShortcutPressed."""
 
     activated = Signal(str)

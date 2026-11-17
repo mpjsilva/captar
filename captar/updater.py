@@ -104,7 +104,7 @@ class Updater(QObject):
 
     @staticmethod
     def _asset(release):
-        suffix = {"deb": "_all.deb", "exe": "-setup-x64.exe"}.get(
+        suffix = {"deb": "_amd64.deb", "exe": "-setup-x64.exe"}.get(
             package_format(), ".noarch.rpm")
         for asset in release.get("assets", []):
             if asset.get("name", "").endswith(suffix):
