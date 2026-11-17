@@ -1,5 +1,5 @@
 Name:           captar
-Version:        2.1.0
+Version:        2.1.1
 Release:        1%{?dist}
 Summary:        Captura de tela com anotações para Wayland
 License:        MIT
@@ -48,6 +48,9 @@ install -m 0644 captar.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/c
 %{_datadir}/icons/hicolor/scalable/apps/captar.svg
 
 %changelog
+* Tue Nov 17 2026 Jamerson <jamerson@localhost> - 2.1.1-1
+- Avisos curtos: "Salvo em Imagens" e "Salvo no Google Drive/OneDrive/Dropbox"
+
 * Mon Nov 16 2026 Jamerson <jamerson@localhost> - 2.1.0-1
 - Versão para Windows 10/11 x64 (instalador)
 - Atalhos globais e captura separados por plataforma

@@ -389,11 +389,22 @@ class CaptarApp(QObject):
         except OSError as exc:
             self._notify(str(exc), warn=True)
         else:
-            self._notify(f"Salvo em {path}")
+            self._notify(self._saved_in(path))
+
+    @staticmethod
+    def _saved_in(path):
+        """"Salvo em Imagens" (ou o nome da pasta escolhida)."""
+        folder = os.path.normcase(os.path.normpath(os.path.dirname(path)))
+        pictures = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation)
+        if pictures and folder == os.path.normcase(os.path.normpath(pictures)):
+            return "Salvo em Imagens"
+        return f"Salvo em {os.path.basename(folder) or folder}"
 
     def _upload(self, image):
         remote = self.settings.get("cloud_remote")
-        valid = {name for name, _ in cloud.list_remotes()}
+        remotes = dict(cloud.list_remotes())
+        valid = set(remotes)
         if not cloud.available():
             self._notify("Instale o rclone para enviar para a nuvem.", warn=True)
             return
@@ -420,9 +431,9 @@ class CaptarApp(QObject):
                 pass
             if ok and link:
                 _copy_text(link)
-                self._notify(f"Link copiado: {link}")
+                self._notify(f"Salvo no {cloud.PROVIDERS[remotes[remote]]}")
             elif ok:
-                self._notify("Enviado para a nuvem.")
+                self._notify(f"Salvo no {cloud.PROVIDERS[remotes[remote]]}")
             else:
                 self._notify(link, warn=True)
 
@@ -462,7 +473,7 @@ class CaptarApp(QObject):
             except OSError as exc:
                 self._notify(str(exc), warn=True)
             else:
-                self._notify(f"Tela inteira salva e copiada: {path}")
+                self._notify(self._saved_in(path))
         finally:
             self.busy = False
 
@@ -496,7 +507,7 @@ class CaptarApp(QObject):
                 self._notify(str(exc), warn=True)
             else:
                 self.tray.setToolTip(f"Captar — salvo em {path}")
-                self._notify(f"Salvo e copiado: {os.path.basename(path)}")
+                self._notify(self._saved_in(path))
         elif action == "copy":
             self._notify("Imagem copiada.")
         elif action == "saveas":

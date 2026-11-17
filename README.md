@@ -38,18 +38,18 @@ Baixe o pacote em [Releases](https://github.com/mpjsilva/captar/releases).
 **Fedora**
 
 ```bash
-sudo dnf install ./captar-2.1.0-1.fc45.noarch.rpm
+sudo dnf install ./captar-2.1.1-1.fc45.noarch.rpm
 ```
 
 **Debian / Ubuntu**
 
 ```bash
-sudo apt install ./captar_2.1.0_amd64.deb
+sudo apt install ./captar_2.1.1_amd64.deb
 ```
 
 **Windows 10/11 x64**
 
-Baixe `captar-2.1.0-setup-x64.exe` e execute. A instalação é só para o seu usuário (não pede administrador) e pode iniciar o Captar com o Windows.
+Baixe `captar-2.1.1-setup-x64.exe` e execute. A instalação é só para o seu usuário (não pede administrador) e pode iniciar o Captar com o Windows.
 
 No Windows 11, a tecla Print Screen abre a Ferramenta de Captura por padrão. Para o Captar usar o Print, desligue **Configurações › Acessibilidade › Teclado › Usar a tecla Print Screen para abrir a captura de tela** (ou escolha outro atalho nas configurações do Captar). Para a nuvem, instale o rclone: `winget install Rclone.Rclone`.
 
@@ -125,7 +125,7 @@ packaging/build-deb.sh
 # a cada release publicada; anexa o instalador .exe à release.
 
 # .rpm
-V=2.1.0
+V=2.1.1
 mkdir -p build/SOURCES && git archive --prefix=captar-$V/ -o build/SOURCES/captar-$V.tar.gz HEAD
 rpmbuild -bb --define "_topdir $PWD/build" captar.spec
 ```
